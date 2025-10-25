@@ -28,20 +28,28 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: './backend/package-lock.json'
 
-    - name: Install dependencies
+    - name: Install Backend Dependencies
       working-directory: ./backend
       run: npm ci
 
-    - name: Lint check
+    - name: Install Frontend Dependencies
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: Lint Backend
       working-directory: ./backend
       run: |
         npm run lint
         npm run format:check
 
-    - name: Run tests
+    - name: Lint Frontend
+      working-directory: ./frontend
+      run: |
+        npm run lint
+        npm run format:check
+
+    - name: Run Backend Tests
       working-directory: ./backend
       run: |
         npm run test
@@ -55,8 +63,16 @@ jobs:
         DB_DATABASE: lan_bic_test
         JWT_SECRET: test_secret
 
-    - name: Build check
+    - name: Run Frontend Tests
+      working-directory: ./frontend
+      run: npm run test
+
+    - name: Build Backend
       working-directory: ./backend
+      run: npm run build
+
+    - name: Build Frontend
+      working-directory: ./frontend
       run: npm run build
 
   security:
@@ -70,18 +86,21 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: './backend/package-lock.json'
 
-    - name: Install dependencies
+    - name: Install Dependencies
+      run: |
+        cd backend && npm ci
+        cd ../frontend && npm ci
+
+    - name: Run Backend Security Audit
       working-directory: ./backend
-      run: npm ci
+      run: npm audit --audit-level=high
 
-    - name: Run security audit
-      working-directory: ./backend
-      run: npm audit
+    - name: Run Frontend Security Audit
+      working-directory: ./frontend
+      run: npm audit --audit-level=high
 
-    - name: Run dependency check
+    - name: Run Dependency Check
       uses: snyk/actions/node@master
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
